@@ -1,6 +1,5 @@
 const express = require('express');
-const mongoose = require('mongoose');
-const { mongoDb } = require('./db');
+const { mongoose } = require('./db');
 
 // Schema for logging calculations
 const CalculationLogSchema = new mongoose.Schema({
@@ -10,7 +9,7 @@ const CalculationLogSchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now },
 });
 
-const CalculationLog = mongoDb.model('CalculationLog', CalculationLogSchema);
+const CalculationLog = mongoose.model('CalculationLog', CalculationLogSchema);
 
 const router = express.Router();
 
