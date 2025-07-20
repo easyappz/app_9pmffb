@@ -1,337 +1,116 @@
 import React, { useState } from 'react';
-import styled from 'styled-components';
+import { Button, Grid, TextField, Paper, Typography } from '@mui/material';
+import './Calculator.css';
 
-// Основной контейнер калькулятора в стиле iOS
-const CalculatorContainer = styled.div`
-  width: 320px;
-  margin: 40px auto;
-  background: #000;
-  border-radius: 40px;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-  padding-bottom: 20px;
-  user-select: none;
-`;
-
-// Экран калькулятора для отображения чисел
-const Display = styled.div`
-  background: #000;
-  color: white;
-  font-size: 80px;
-  text-align: right;
-  padding: 20px;
-  height: 120px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: flex-end;
-  overflow: hidden;
-  box-sizing: border-box;
-  font-family: 'Arial', sans-serif;
-  font-weight: 300;
-`;
-
-// Сетка для кнопок
-const ButtonsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1px;
-  background: #333;
-`;
-
-// Стили для кнопок с учетом различных типов (цифры, операции, функции)
-const Button = styled.button`
-  border: none;
-  padding: 25px 10px;
-  font-size: 24px;
-  cursor: pointer;
-  background: ${props => props.bg || '#666'};
-  color: ${props => props.color || 'white'};
-  transition: background 0.2s ease-in-out;
-  font-family: 'Arial', sans-serif;
-  font-weight: 400;
-  border-radius: 0;
-  outline: none;
-  position: relative;
-
-  &:hover {
-    background: ${props => props.hoverBg || '#888'};
-  }
-
-  &:active {
-    background: ${props => props.activeBg || '#555'};
-    transform: scale(0.98);
-  }
-
-  // Добавляем эффект тени для кнопок
-  &:after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: rgba(0, 0, 0, 0.3);
-  }
-`;
-
-// Компонент калькулятора
+/**
+ * Calculator component that handles basic arithmetic operations.
+ * Manages state for current input, previous input, operation, and result.
+ */
 const Calculator = () => {
-  const [display, setDisplay] = useState('0');
-  const [previousValue, setPreviousValue] = useState(null);
+  // State for calculator inputs and results
+  const [currentInput, setCurrentInput] = useState('0');
+  const [previousInput, setPreviousInput] = useState('');
   const [operation, setOperation] = useState(null);
-  const [waitingForSecondValue, setWaitingForSecondValue] = useState(false);
+  const [result, setResult] = useState(null);
+  const [waitingForSecondInput, setWaitingForSecondInput] = useState(false);
 
-  // Обработка ввода цифр
-  const handleNumberClick = (value) => {
-    if (display === '0' && value !== '.') {
-      setDisplay(value);
-    } else if (waitingForSecondValue) {
-      setDisplay(value);
-      setWaitingForSecondValue(false);
-    } else {
-      // Ограничение на ввод только одной точки
-      if (value === '.' && display.includes('.')) return;
-      setDisplay(display + value);
-    }
-  };
+  // Button layout for the calculator
+  const buttons = [
+    '7', '8', '9', '/',
+    '4', '5', '6', '*',
+    '1', '2', '3', '-',
+    '0', '.', '=', '+',
+    'C'
+  ];
 
-  // Обработка выбора операции
-  const handleOperationClick = (op) => {
-    setPreviousValue(parseFloat(display));
-    setOperation(op);
-    setWaitingForSecondValue(true);
-  };
+  /**
+   * Handles button clicks and updates calculator state accordingly.
+   * @param {string} value - The value of the clicked button.
+   */
+  const handleButtonClick = (value) => {
+    if (value === 'C') {
+      // Reset calculator state on clear
+      setCurrentInput('0');
+      setPreviousInput('');
+      setOperation(null);
+      setResult(null);
+      setWaitingForSecondInput(false);
+    } else if (['+', '-', '*', '/'].includes(value)) {
+      // Handle operation selection
+      setPreviousInput(currentInput);
+      setOperation(value);
+      setWaitingForSecondInput(true);
+      setCurrentInput('0');
+    } else if (value === '=') {
+      // Calculate result when equals is pressed
+      if (previousInput && operation && currentInput) {
+        const num1 = parseFloat(previousInput);
+        const num2 = parseFloat(currentInput);
+        let calculatedResult = 0;
 
-  // Вычисление результата
-  const calculateResult = () => {
-    if (!previousValue || !operation) return;
-
-    const current = parseFloat(display);
-    let result = 0;
-
-    switch (operation) {
-      case '+':
-        result = previousValue + current;
-        break;
-      case '-':
-        result = previousValue - current;
-        break;
-      case '×':
-        result = previousValue * current;
-        break;
-      case '÷':
-        if (current === 0) {
-          setDisplay('Ошибка');
-          return;
+        if (operation === '+') {
+          calculatedResult = num1 + num2;
+        } else if (operation === '-') {
+          calculatedResult = num1 - num2;
+        } else if (operation === '*') {
+          calculatedResult = num1 * num2;
+        } else if (operation === '/') {
+          if (num2 === 0) {
+            setResult('Ошибка');
+            return;
+          }
+          calculatedResult = num1 / num2;
         }
-        result = previousValue / current;
-        break;
-      default:
-        return;
-    }
 
-    // Форматирование результата для избежания длинных десятичных чисел
-    if (result.toString().length > 9) {
-      setDisplay(result.toFixed(9 - result.toString().indexOf('.')));
+        setResult(calculatedResult);
+        setCurrentInput(calculatedResult.toString());
+        setPreviousInput('');
+        setOperation(null);
+        setWaitingForSecondInput(false);
+      }
     } else {
-      setDisplay(result.toString());
-    }
-    setPreviousValue(null);
-    setOperation(null);
-  };
-
-  // Сброс кальme();
-  // Сброс всех значений
-  const handleClear = () => {
-    setDisplay('0');
-    setPreviousValue(null);
-    setOperation(null);
-    setWaitingForSecondValue(false);
-  };
-
-  // Вычисление процента
-  const handlePercent = () => {
-    const value = parseFloat(display);
-    setDisplay((value / 100).toString());
-  };
-
-  // Смена знака числа
-  const handleToggleSign = () => {
-    if (display !== '0') {
-      setDisplay((parseFloat(display) * -1).toString());
+      // Handle number or decimal input
+      if (currentInput === '0' && value !== '.') {
+        setCurrentInput(value);
+      } else if (value === '.' && currentInput.includes('.')) {
+        return;
+      } else {
+        setCurrentInput(currentInput + value);
+      }
     }
   };
 
   return (
-    <CalculatorContainer>
-      <Display>{display}</Display>
-      <ButtonsGrid>
-        {/* Функциональные кнопки (AC, ±, %) в сером цвете */}
-        <Button 
-          bg="#A5A5A5" 
-          color="black" 
-          hoverBg="#B5B5B5" 
-          activeBg="#959595" 
-          onClick={handleClear}
-        >
-          AC
-        </Button>
-        <Button 
-          bg="#A5A5A5" 
-          color="black" 
-          hoverBg="#B5B5B5" 
-          activeBg="#959595" 
-          onClick={handleToggleSign}
-        >
-          ±
-        </Button>
-        <Button 
-          bg="#A5A5A5" 
-          color="black" 
-          hoverBg="#B5B5B5" 
-          activeBg="#959595" 
-          onClick={handlePercent}
-        >
-          %
-        </Button>
-        {/* Операционные кнопки в оранжевом цвете */}
-        <Button 
-          bg="#FF9500" 
-          hoverBg="#FFAA33" 
-          activeBg="#CC7700" 
-          onClick={() => handleOperationClick('÷')}
-        >
-          ÷
-        </Button>
-
-        {/* Цифровые кнопки в темном сером цвете */}
-        <Button 
-          bg="#333" 
-          hoverBg="#444" 
-          activeBg="#222" 
-          onClick={() => handleNumberClick('7')}
-        >
-          7
-        </Button>
-        <Button 
-          bg="#333" 
-          hoverBg="#444" 
-          activeBg="#222" 
-          onClick={() => handleNumberClick('8')}
-        >
-          8
-        </Button>
-        <Button 
-          bg="#333" 
-          hoverBg="#444" 
-          activeBg="#222" 
-          onClick={() => handleNumberClick('9')}
-        >
-          9
-        </Button>
-        <Button 
-          bg="#FF9500" 
-          hoverBg="#FFAA33" 
-          activeBg="#CC7700" 
-          onClick={() => handleOperationClick('×')}
-        >
-          ×
-        </Button>
-
-        <Button 
-          bg="#333" 
-          hoverBg="#444" 
-          activeBg="#222" 
-          onClick={() => handleNumberClick('4')}
-        >
-          4
-        </Button>
-        <Button 
-          bg="#333" 
-          hoverBg="#444" 
-          activeBg="#222" 
-          onClick={() => handleNumberClick('5')}
-        >
-          5
-        </Button>
-        <Button 
-          bg="#333" 
-          hoverBg="#444" 
-          activeBg="#222" 
-          onClick={() => handleNumberClick('6')}
-        >
-          6
-        </Button>
-        <Button 
-          bg="#FF9500" 
-          hoverBg="#FFAA33" 
-          activeBg="#CC7700" 
-          onClick={() => handleOperationClick('-')}
-        >
-          -
-        </Button>
-
-        <Button 
-          bg="#333" 
-          hoverBg="#444" 
-          activeBg="#222" 
-          onClick={() => handleNumberClick('1')}
-        >
-          1
-        </Button>
-        <Button 
-          bg="#333" 
-          hoverBg="#444" 
-          activeBg="#222" 
-          onClick={() => handleNumberClick('2')}
-        >
-          2
-        </Button>
-        <Button 
-          bg="#333" 
-          hoverBg="#444" 
-          activeBg="#222" 
-          onClick={() => handleNumberClick('3')}
-        >
-          3
-        </Button>
-        <Button 
-          bg="#FF9500" 
-          hoverBg="#FFAA33" 
-          activeBg="#CC7700" 
-          onClick={() => handleOperationClick('+')}
-        >
-          +
-        </Button>
-
-        {/* Специальная кнопка 0 с увеличенной шириной */}
-        <Button 
-          bg="#333" 
-          hoverBg="#444" 
-          activeBg="#222" 
-          onClick={() => handleNumberClick('0')} 
-          style={{ gridColumn: 'span 2', textAlign: 'left', paddingLeft: '20px' }}
-        >
-          0
-        </Button>
-        <Button 
-          bg="#333" 
-          hoverBg="#444" 
-          activeBg="#222" 
-          onClick={() => handleNumberClick('.')}
-        >
-          ,
-        </Button>
-        <Button 
-          bg="#FF9500" 
-          hoverBg="#FFAA33" 
-          activeBg="#CC7700" 
-          onClick={calculateResult}
-        >
-          =
-        </Button>
-      </ButtonsGrid>
-    </CalculatorContainer>
+    <Paper elevation={3} className="calculator-container">
+      <Typography variant="h6" className="calculator-title">
+        Калькулятор
+      </Typography>
+      <TextField
+        variant="outlined"
+        value={result !== null ? result : currentInput}
+        fullWidth
+        disabled
+        className="calculator-display"
+        InputProps={{
+          style: { textAlign: 'right', fontSize: '1.5rem' }
+        }}
+      />
+      <Grid container spacing={1} className="calculator-buttons">
+        {buttons.map((btn) => (
+          <Grid item xs={3} key={btn}>
+            <Button
+              variant={['+', '-', '*', '/'].includes(btn) ? 'outlined' : 'contained'}
+              color={btn === 'C' ? 'error' : btn === '=' ? 'success' : 'primary'}
+              fullWidth
+              style={{ height: '60px', fontSize: '1.2rem' }}
+              onClick={() => handleButtonClick(btn)}
+            >
+              {btn}
+            </Button>
+          </Grid>
+        ))}
+      </Grid>
+    </Paper>
   );
 };
 
